@@ -71,6 +71,13 @@
             android:id="@+id/btnTakePic"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/take_picture"/>
+            android:text="@string/take_picture"
+            android:onClick="onBtnTakePicClick"/>
+        <Button
+            android:id="@+id/btnRecordVideo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/record_video"
+            android:onClick="onBtnRecordVideoClick"/>
     </LinearLayout>
 </RelativeLayout>

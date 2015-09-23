@@ -5,8 +5,8 @@
     android:background="@drawable/phone_portrait">
     <ImageView
         android:id="@+id/ivLastPicture"
-        android:layout_width="fill_parent"
-        android:layout_height="300dp"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
         android:layout_alignParentTop="true"
         android:background="@drawable/borders"
         android:layout_margin="5dp"/>
@@ -16,7 +16,8 @@
         android:layout_height="wrap_content"
         android:background="@drawable/thin_border"
         android:layout_centerHorizontal="true"
-        android:layout_margin="5dp">
+        android:layout_margin="5dp"
+        android:layout_centerInParent="true">
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -72,6 +73,12 @@
             android:layout_height="wrap_content"
             android:text="@string/take_picture"
             android:onClick="onBtnTakePicClick"/>
+        <Button
+            android:id="@+id/btnRecordVideo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/record_video"
+            android:onClick="onBtnRecordVideoClick"/>
     </LinearLayout>
 
 </RelativeLayout>

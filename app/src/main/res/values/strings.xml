@@ -8,4 +8,5 @@
     <string name="latitude">Latitude: </string>
     <string name="longitude">Longitude: </string>
     <string name="take_picture">Take Picture</string>
+    <string name="record_video">Record Video</string>
 </resources>

@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,9 +31,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvLong;
     private TextView tvLat;
 
-    private static final int REQUEST_CODE = 123;
+    private static final int PICTURE_REQUEST_CODE = 123;
+    private static final int VIDEO_REQUEST_CODE = 321;
     public static final String SAVED_PREFERENCES = "SAVED_PREFERENCES";
     public static final String SAVED_PICTURE_PATH = "SAVED_PICTURE_PATH";
+//    public static final String SAVED_PICTURE_PREV_PATH = "SAVED_PICTURE_PREV_PATH";
+//
+//    private String picturePrevPath;
 
     private File pictureDirectory;
 
@@ -81,17 +86,37 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == REQUEST_CODE)
+        if(requestCode == PICTURE_REQUEST_CODE)
         {
             if(resultCode == RESULT_OK)
             {
+                Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
 
                 setPictureToSize(filename, ivLastPic);
             }
             if(resultCode == RESULT_CANCELED)
             {
-                setPictureToSize(loadLastAttemptedImageCaptureFilename(), ivLastPic);
+                Log.d("onActivityResult", "RESULT_CANCELED");
+//                if (data == null)
+//                    setPictureToSize(picturePrevPath, ivLastPic);
+            }
+        }
+
+        if(requestCode == VIDEO_REQUEST_CODE)
+        {
+            if(resultCode == RESULT_OK)
+            {
+                Log.d("onActivityResult", "RESULT_OK");
+                String filename = loadLastAttemptedImageCaptureFilename();
+
+                setPictureToSize(filename, ivLastPic);
+            }
+            if(resultCode == RESULT_CANCELED)
+            {
+                Log.d("onActivityResult", "RESULT_CANCELED");
+//                if (data == null)
+//                    setPictureToSize(picturePrevPath, ivLastPic);
             }
         }
 
@@ -101,6 +126,8 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
         String saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT PATH");
         Log.d("FILE_PATH", "Loaded value: " + saved_path);
+//        picturePrevPath = saved_path;
+//        Log.d("FILE_PATH", "Loaded Prev value: " + picturePrevPath);
         return saved_path;
     }
 
@@ -108,7 +135,9 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(SAVED_PICTURE_PATH, filename);
+//        editor.putString(SAVED_PICTURE_PREV_PATH, filename);
         Log.d("FILE_PATH", "Saved value: " + filename);
+//        Log.d("FILE_PATH", "Saved prev value: " + filename);
         editor.apply();
     }
 
@@ -154,7 +183,13 @@ public class MainActivity extends AppCompatActivity {
         bmOptions.inSampleSize = scaleFactor;
         Bitmap bitmap = BitmapFactory.decodeFile(filename, bmOptions);
 
-        iv.setRotation(90);
+
+
+        String orientation;
+        String latValue;
+        String latRef;
+        String longValue;
+        String longRef;
 
         ExifInterface exif = null;
         try {
@@ -163,9 +198,49 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         if(exif.getAttribute(ExifInterface.TAG_ORIENTATION) != null)
-            tvOrientation.setText(exif.getAttribute(ExifInterface.TAG_ORIENTATION));
-        tvLat.setText(exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE) + " " + exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF));
-        tvLong.setText(exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE) + " " + exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF));
+        {
+            orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+            latValue = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+            latRef = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+            longValue = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+            longRef = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+            tvOrientation.setText(orientation);
+            tvLat.setText(latValue + " " + latRef);
+            tvLong.setText(longValue + " " + longRef);
+
+//            if(orientation.equals("8"))
+//            {
+//                iv.setRotation(270);
+//            }
+//            else if(orientation.equals("6"))
+//            {
+//                iv.setRotation(90);
+//            }
+//            else if(orientation.equals("3"))
+//            {
+//                iv.setRotation(180);
+//            }
+//            else if(orientation.equals("1"))
+//            {
+//            }
+
+            switch (orientation)
+            {
+                case "1":
+                    break;
+                case "3":
+                    iv.setRotation(180);
+                    break;
+                case "6":
+                    iv.setRotation(90);
+                    break;
+                case "8":
+                    iv.setRotation(270);
+                    break;
+            }
+        }
+
+
 
         iv.setImageBitmap(bitmap);
     }
@@ -196,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBtnTakePicClick(View view) {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String filename = pictureDirectory.getPath() + File.separator+"IMG_"+timeStamp+".jpg";
         File imageFile = new File(filename);
         Uri imageUri = Uri.fromFile(imageFile);
@@ -211,6 +286,9 @@ public class MainActivity extends AppCompatActivity {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, filepath);
         if(cameraIntent.resolveActivity(getPackageManager()) != null)
-            startActivityForResult(cameraIntent, REQUEST_CODE);
+            startActivityForResult(cameraIntent, PICTURE_REQUEST_CODE);
+    }
+
+    public void onBtnRecordVideoClick(View view) {
     }
 }
