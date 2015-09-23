@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String SAVED_MODE = "SAVED_MODE";
 
     // PICTURE MODE BY DEFAULT
-    private boolean pictureMode = true;
+    private boolean pictureMode;
 //    public static final String SAVED_PICTURE_PREV_PATH = "SAVED_PICTURE_PREV_PATH";
 //
 //    private String picturePrevPath;
@@ -68,11 +68,7 @@ public class MainActivity extends AppCompatActivity {
         btnPic = (Button) findViewById(R.id.btnTakePic);
         btnVideo = (Button) findViewById(R.id.btnRecordVideo);
 
-//        if(pictureMode && !videoMode)
-//        {
-//            vvLastVid.setVisibility(View.INVISIBLE);
-//            btnVideo.setVisibility(View.INVISIBLE);
-//        }
+        pictureMode = true;
         checkAndChangeMode();
 
 
@@ -81,8 +77,14 @@ public class MainActivity extends AppCompatActivity {
         else
             Toast.makeText(this, "Can't do stuff", Toast.LENGTH_LONG).show();
 
-        pictureDirectory = getMyPicDirectory();
-        videoDirectory = getMyVideoDirectory();
+        initializeDirectory(pictureMode);
+    }
+
+    private void initializeDirectory(boolean pictureMode) {
+        if(pictureMode)
+            pictureDirectory = getMyPicDirectory();
+        else if(!pictureMode)
+            videoDirectory = getMyPicDirectory();
     }
 
     @Override
@@ -114,12 +116,13 @@ public class MainActivity extends AppCompatActivity {
 
         if(requestCode == PICTURE_REQUEST_CODE)
         {
+            Log.d("onActivityResult", "PICTURE_REQUEST_CODE");
             if(resultCode == RESULT_OK)
             {
                 Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
 
-                setPictureToSize(filename, ivLastPic);
+                setPictureToSize(filename, ivLastPic, vvLastVid);
             }
             if(resultCode == RESULT_CANCELED)
             {
@@ -131,18 +134,17 @@ public class MainActivity extends AppCompatActivity {
 
         if(requestCode == VIDEO_REQUEST_CODE)
         {
+            Log.d("onActivityResult", "VIDEO_REQUEST_CODE");
             if(resultCode == RESULT_OK)
             {
                 Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
 
-                setVideoToSize(filename, vvLastVid);
+                setPictureToSize(filename, ivLastPic, vvLastVid);
             }
             if(resultCode == RESULT_CANCELED)
             {
                 Log.d("onActivityResult", "RESULT_CANCELED");
-//                if (data == null)
-//                    setPictureToSize(picturePrevPath, ivLastPic);
             }
         }
 
@@ -150,14 +152,14 @@ public class MainActivity extends AppCompatActivity {
 
     private String loadLastAttemptedImageCaptureFilename() {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
-        String saved_path;
+        String saved_path = null;
 
-        pictureMode = prefs.getBoolean(SAVED_MODE, true);
+        //pictureMode = prefs.getBoolean(SAVED_MODE, true);
 
         if(pictureMode)
-            saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT PATH");
-        else
-            saved_path = prefs.getString(SAVED_VIDEO_PATH, "DEFAULT PATH");
+            saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT");
+        else if(!pictureMode)
+            saved_path = prefs.getString(SAVED_VIDEO_PATH, "DEFAULT");
 
         Log.d("FILE_PATH", "Loaded value: " + saved_path);
 //        picturePrevPath = saved_path;
@@ -170,10 +172,10 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = prefs.edit();
         if(pictureMode)
             editor.putString(SAVED_PICTURE_PATH, filename);
-        else
+        else if(!pictureMode)
             editor.putString(SAVED_VIDEO_PATH, filename);
 //        editor.putString(SAVED_PICTURE_PREV_PATH, filename);
-        editor.putBoolean(SAVED_MODE, pictureMode);
+        //editor.putBoolean(SAVED_MODE, pictureMode);
         Log.d("FILE_PATH", "Saved value: " + filename);
 //        Log.d("FILE_PATH", "Saved prev value: " + filename);
         editor.apply();
@@ -184,10 +186,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume()
     {
         super.onResume();
-        String pictureFilename = loadLastAttemptedImageCaptureFilename();
-        String videoFilename = loadLastAttemptedImageCaptureFilename();
-        setPictureToSize(pictureFilename, ivLastPic);
-        setVideoToSize(videoFilename, vvLastVid);
+        initializeDirectory(pictureMode);
+        String filename = loadLastAttemptedImageCaptureFilename();
+        //String videoFilename = loadLastAttemptedImageCaptureFilename();
+        setPictureToSize(filename, ivLastPic, vvLastVid);
+//        setVideoToSize(videoFilename, vvLastVid);
     }
 
     public boolean isExternalStorageWritable()
@@ -206,23 +209,9 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void setPictureToSize(String filename, ImageView iv)
+    private void setPictureToSize(String filename, ImageView iv, VideoView vv)
     {
-        int targetW = 200;
-        int targetH = 200;
-
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(filename, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        Bitmap bitmap = BitmapFactory.decodeFile(filename, bmOptions);
-
+        Log.d("setPictureToSize", "File: " + filename);
         String orientation;
         String latValue;
         String latRef;
@@ -262,9 +251,27 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        if(pictureMode)
+        {
+            int targetW = 200;
+            int targetH = 200;
 
+            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+            bmOptions.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(filename, bmOptions);
+            int photoW = bmOptions.outWidth;
+            int photoH = bmOptions.outHeight;
 
-        iv.setImageBitmap(bitmap);
+            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+            bmOptions.inJustDecodeBounds = false;
+            bmOptions.inSampleSize = scaleFactor;
+            Bitmap bitmap = BitmapFactory.decodeFile(filename, bmOptions);
+
+            iv.setImageBitmap(bitmap);
+        }
+        else if(!pictureMode)
+            vv.setVideoPath(filename);
     }
 
     private void setVideoToSize(String filename, VideoView iv)
@@ -313,8 +320,13 @@ public class MainActivity extends AppCompatActivity {
 
     private File getMyPicDirectory()
     {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "BrickCamera");
+        File mediaStorageDir = null;
+        if(pictureMode)
+            mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES), "BrickCamera");
+        else if(!pictureMode)
+            mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_MOVIES), "BrickCamera");
         // This location works best if you want the created images to be shared
         // between applications and persist after your app has been uninstalled.
 
@@ -351,6 +363,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBtnTakePicClick(View view) {
+        initializeDirectory(pictureMode);
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String filename = pictureDirectory.getPath() + File.separator+"IMG_"+timeStamp+".jpg";
         File imageFile = new File(filename);
@@ -372,7 +385,7 @@ public class MainActivity extends AppCompatActivity {
     public void onBtnRecordVideoClick(View view) {
 
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
-        String filename = videoDirectory.getPath() + File.separator+"VIDEO_"+timeStamp+".mp4";
+        String filename = videoDirectory.getPath() + File.separator+"VID_"+timeStamp+".mp4";
         File videoFile = new File(filename);
         Uri videoUri = Uri.fromFile(videoFile);
 
