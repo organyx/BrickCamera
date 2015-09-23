@@ -8,7 +8,8 @@
         android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
-        android:layout_margin="5dp"/>
+        android:layout_margin="5dp"
+        android:onClick="onVideoClick"/>
     <ImageView
         android:id="@+id/ivLastPicture"
         android:layout_width="300dp"

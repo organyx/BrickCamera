@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String SAVED_MODE = "SAVED_MODE";
 
     // PICTURE MODE BY DEFAULT
-    private boolean pictureMode;
+    public boolean pictureMode = true;
 //    public static final String SAVED_PICTURE_PREV_PATH = "SAVED_PICTURE_PREV_PATH";
 //
 //    private String picturePrevPath;
@@ -68,22 +69,22 @@ public class MainActivity extends AppCompatActivity {
         btnPic = (Button) findViewById(R.id.btnTakePic);
         btnVideo = (Button) findViewById(R.id.btnRecordVideo);
 
-        pictureMode = true;
-        checkAndChangeMode();
-
+//        checkAndChangeMode();
+        turnOnPicMode();
 
         if(isExternalStorageReadable() && isExternalStorageWritable())
             Toast.makeText(this, "Can do stuff", Toast.LENGTH_LONG).show();
         else
             Toast.makeText(this, "Can't do stuff", Toast.LENGTH_LONG).show();
-
-        initializeDirectory(pictureMode);
+        Log.d("MODE", "onCreate Current mode: " + pictureMode);
+        initializeDirectory();
     }
 
-    private void initializeDirectory(boolean pictureMode) {
+    private void initializeDirectory() {
+        Log.d("MODE", "initD Current mode: " + pictureMode);
         if(pictureMode)
             pictureDirectory = getMyPicDirectory();
-        else if(!pictureMode)
+        else
             videoDirectory = getMyPicDirectory();
     }
 
@@ -121,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
-
+//                saveMode();
                 setPictureToSize(filename, ivLastPic, vvLastVid);
             }
             if(resultCode == RESULT_CANCELED)
@@ -139,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
             {
                 Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
-
+//                saveMode();
                 setPictureToSize(filename, ivLastPic, vvLastVid);
             }
             if(resultCode == RESULT_CANCELED)
@@ -152,13 +153,13 @@ public class MainActivity extends AppCompatActivity {
 
     private String loadLastAttemptedImageCaptureFilename() {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
-        String saved_path = null;
-
-        //pictureMode = prefs.getBoolean(SAVED_MODE, true);
-
+        String saved_path;
+        Log.d("MODE", "Load. Current mode: " + pictureMode);
+//        pictureMode = prefs.getBoolean(SAVED_MODE, true);
+        Log.d("MODE2", "Loaded. Current mode: " + pictureMode);
         if(pictureMode)
             saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT");
-        else if(!pictureMode)
+        else
             saved_path = prefs.getString(SAVED_VIDEO_PATH, "DEFAULT");
 
         Log.d("FILE_PATH", "Loaded value: " + saved_path);
@@ -170,27 +171,54 @@ public class MainActivity extends AppCompatActivity {
     private void saveLastAttemptedImageCaptureFilename(String filename) {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
+        Log.d("MODE", "Save. Current mode: " + pictureMode);
         if(pictureMode)
             editor.putString(SAVED_PICTURE_PATH, filename);
-        else if(!pictureMode)
+        else
             editor.putString(SAVED_VIDEO_PATH, filename);
 //        editor.putString(SAVED_PICTURE_PREV_PATH, filename);
-        //editor.putBoolean(SAVED_MODE, pictureMode);
+//        editor.putBoolean(SAVED_MODE, pictureMode);
+        Log.d("MODE2", "Saved. Current mode: " + pictureMode);
         Log.d("FILE_PATH", "Saved value: " + filename);
 //        Log.d("FILE_PATH", "Saved prev value: " + filename);
         editor.apply();
     }
+
+//    private void loadMode()
+//    {
+//        SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
+//        pictureMode = prefs.getBoolean(SAVED_MODE, true);
+//        Log.d("MODE3", "loadMode. Current mode: " + pictureMode);
+//    }
+//
+//    private void saveMode()
+//    {
+//        SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
+//        SharedPreferences.Editor editor = prefs.edit();
+//        Log.d("MODE3", "saveMode. Current mode: " + pictureMode);
+//        editor.putBoolean(SAVED_MODE, pictureMode);
+//        editor.apply();
+//    }
 
 
     @Override
     protected void onResume()
     {
         super.onResume();
-        initializeDirectory(pictureMode);
+        Log.d("MODE", "onResume. Current mode: " + pictureMode);
+//        initializeDirectory(pictureMode);
+//        loadMode();
         String filename = loadLastAttemptedImageCaptureFilename();
         //String videoFilename = loadLastAttemptedImageCaptureFilename();
         setPictureToSize(filename, ivLastPic, vvLastVid);
 //        setVideoToSize(videoFilename, vvLastVid);
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+//        saveMode();
     }
 
     public boolean isExternalStorageWritable()
@@ -211,6 +239,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setPictureToSize(String filename, ImageView iv, VideoView vv)
     {
+        Log.d("MODE", "setSize. Current mode: " + pictureMode);
         Log.d("setPictureToSize", "File: " + filename);
         String orientation;
         String latValue;
@@ -270,81 +299,31 @@ public class MainActivity extends AppCompatActivity {
 
             iv.setImageBitmap(bitmap);
         }
-        else if(!pictureMode)
-            vv.setVideoPath(filename);
-    }
-
-    private void setVideoToSize(String filename, VideoView iv)
-    {
-        String orientation;
-        String latValue;
-        String latRef;
-        String longValue;
-        String longRef;
-
-        ExifInterface exif = null;
-        try {
-            exif = new ExifInterface(filename);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if(exif.getAttribute(ExifInterface.TAG_ORIENTATION) != null)
+        else
         {
-            orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-            latValue = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
-            latRef = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
-            longValue = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
-            longRef = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
-            tvOrientation.setText(orientation);
-            tvLat.setText(latValue + " " + latRef);
-            tvLong.setText(longValue + " " + longRef);
+            MediaController mc = new MediaController(this);
+            mc.setAnchorView(vv);
+            mc.setMediaPlayer(vv);
 
-            switch (orientation)
-            {
-                case "1":
-                    break;
-                case "3":
-                    iv.setRotation(180);
-                    break;
-                case "6":
-                    iv.setRotation(90);
-                    break;
-                case "8":
-                    iv.setRotation(270);
-                    break;
-            }
+            vv.setMediaController(mc);
+//            vv.setClickable(true);
+//            vv.setEnabled(true);
+
+            vv.setVideoPath(filename);
         }
-
-        iv.setVideoPath(filename);
     }
 
     private File getMyPicDirectory()
     {
-        File mediaStorageDir = null;
+        Log.d("MODE", "getD. Current mode: " + pictureMode);
+        File mediaStorageDir;
         if(pictureMode)
             mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES), "BrickCamera");
-        else if(!pictureMode)
+        else
             mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_MOVIES), "BrickCamera");
-        // This location works best if you want the created images to be shared
-        // between applications and persist after your app has been uninstalled.
 
-        // Create the storage directory if it does not exist
-        if (checkMyDirectory(mediaStorageDir))
-            return mediaStorageDir;
-        else
-            return null;
-    }
-
-    private File getMyVideoDirectory()
-    {
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_MOVIES), "BrickCamera");
-        // This location works best if you want the created images to be shared
-        // between applications and persist after your app has been uninstalled.
-
-        // Create the storage directory if it does not exist
         if (checkMyDirectory(mediaStorageDir))
             return mediaStorageDir;
         else
@@ -353,6 +332,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean checkMyDirectory(File filename)
     {
+        Log.d("MODE", "checkD. Current mode: " + pictureMode);
         if (! filename.exists()){
             if (! filename.mkdirs()){
                 Log.d("MyCameraApp", "failed to create directory");
@@ -363,7 +343,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBtnTakePicClick(View view) {
-        initializeDirectory(pictureMode);
+
+        turnOnPicMode();
+        initializeDirectory();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String filename = pictureDirectory.getPath() + File.separator+"IMG_"+timeStamp+".jpg";
         File imageFile = new File(filename);
@@ -383,7 +365,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBtnRecordVideoClick(View view) {
-
+        turnOnMovMode();
+        initializeDirectory();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String filename = videoDirectory.getPath() + File.separator+"VID_"+timeStamp+".mp4";
         File videoFile = new File(filename);
@@ -410,39 +393,63 @@ public class MainActivity extends AppCompatActivity {
 
     public void checkAndChangeMode()
     {
+        Log.d("MODE", "checkMode. Current mode: " + pictureMode);
         if( pictureMode )
         {
-            pictureMode = false;
-
-            //HIDE VIDEO
-            if (vvLastVid.getVisibility() == View.VISIBLE )
-                vvLastVid.setVisibility(View.INVISIBLE);
-            if (btnVideo.getVisibility() == View.VISIBLE)
-                btnVideo.setVisibility(View.INVISIBLE);
-            //SHOW PICTURE
-            if (ivLastPic.getVisibility() == View.INVISIBLE)
-                ivLastPic.setVisibility(View.VISIBLE);
-            if (llInfo.getVisibility() == View.INVISIBLE)
-                llInfo.setVisibility(View.VISIBLE);
-            if (btnPic.getVisibility() == View.INVISIBLE)
-                btnPic.setVisibility(View.VISIBLE);
+            turnOnMovMode();
         }
-        else if(!pictureMode)
+        else
         {
-            pictureMode = true;
-
-            //HIDE PICTURE
-            if (ivLastPic.getVisibility() == View.VISIBLE)
-                ivLastPic.setVisibility(View.INVISIBLE);
-            if (llInfo.getVisibility() == View.VISIBLE)
-                llInfo.setVisibility(View.INVISIBLE);
-            if (btnPic.getVisibility() == View.VISIBLE)
-                btnPic.setVisibility(View.INVISIBLE);
-            //SHOW VIDEO
-            if (btnVideo.getVisibility() == View.INVISIBLE )
-                btnVideo.setVisibility(View.VISIBLE);
-            if (vvLastVid.getVisibility() == View.INVISIBLE )
-                vvLastVid.setVisibility(View.VISIBLE);
+            turnOnPicMode();
         }
+    }
+
+    public void turnOnPicMode()
+    {
+        pictureMode = true;
+        //HIDE VIDEO
+        if (vvLastVid.getVisibility() == View.VISIBLE )
+            vvLastVid.setVisibility(View.INVISIBLE);
+        if (btnVideo.getVisibility() == View.VISIBLE)
+            btnVideo.setVisibility(View.INVISIBLE);
+        //SHOW PICTURE
+        if (ivLastPic.getVisibility() == View.INVISIBLE)
+            ivLastPic.setVisibility(View.VISIBLE);
+        if (llInfo.getVisibility() == View.INVISIBLE)
+            llInfo.setVisibility(View.VISIBLE);
+        if (btnPic.getVisibility() == View.INVISIBLE)
+            btnPic.setVisibility(View.VISIBLE);
+        Log.d("MODE", "PICTURE MODE. Current mode: " + pictureMode);
+    }
+
+    public void turnOnMovMode()
+    {
+        pictureMode = false;
+
+        //HIDE PICTURE
+        if (ivLastPic.getVisibility() == View.VISIBLE)
+            ivLastPic.setVisibility(View.INVISIBLE);
+        if (llInfo.getVisibility() == View.VISIBLE)
+            llInfo.setVisibility(View.INVISIBLE);
+        if (btnPic.getVisibility() == View.VISIBLE)
+            btnPic.setVisibility(View.INVISIBLE);
+        //SHOW VIDEO
+        if (btnVideo.getVisibility() == View.INVISIBLE )
+            btnVideo.setVisibility(View.VISIBLE);
+        if (vvLastVid.getVisibility() == View.INVISIBLE )
+            vvLastVid.setVisibility(View.VISIBLE);
+        Log.d("MODE", "MOVIE MODE. Current mode: " + pictureMode);
+    }
+
+    public void onVideoClick(View view) {
+//        if(vvLastVid.isPlaying())
+//            vvLastVid.stopPlayback();
+//        if(!vvLastVid.isPlaying())
+//        {
+////            vvLastVid.setMediaController(new MediaController(this));
+//            vvLastVid.requestFocus();
+//            vvLastVid.start();
+//        }
+        vvLastVid.start();
     }
 }
