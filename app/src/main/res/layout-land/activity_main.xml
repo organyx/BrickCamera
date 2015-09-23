@@ -3,6 +3,12 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/phone_landscape">
+    <VideoView
+        android:id="@+id/vvLastVideo"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_margin="5dp"/>
     <ImageView
         android:id="@+id/ivLastPicture"
         android:layout_width="300dp"
@@ -12,6 +18,7 @@
         android:layout_margin="5dp"
         />
     <LinearLayout
+        android:id="@+id/llInfo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/thin_border"
@@ -79,5 +86,11 @@
             android:layout_height="wrap_content"
             android:text="@string/record_video"
             android:onClick="onBtnRecordVideoClick"/>
+        <Button
+            android:id="@+id/btnChangeMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/change_mode"
+            android:onClick="onBtnChangeModeClick"/>
     </LinearLayout>
 </RelativeLayout>

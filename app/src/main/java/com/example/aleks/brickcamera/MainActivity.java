@@ -14,9 +14,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,19 +30,29 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private ImageView ivLastPic;
+    private VideoView vvLastVid;
+    private LinearLayout llInfo;
     private TextView tvOrientation;
     private TextView tvLong;
     private TextView tvLat;
+    private Button btnPic;
+    private Button btnVideo;
 
     private static final int PICTURE_REQUEST_CODE = 123;
     private static final int VIDEO_REQUEST_CODE = 321;
     public static final String SAVED_PREFERENCES = "SAVED_PREFERENCES";
     public static final String SAVED_PICTURE_PATH = "SAVED_PICTURE_PATH";
+    public static final String SAVED_VIDEO_PATH = "SAVED_PICTURE_PATH";
+    public static final String SAVED_MODE = "SAVED_MODE";
+
+    // PICTURE MODE BY DEFAULT
+    private boolean pictureMode = true;
 //    public static final String SAVED_PICTURE_PREV_PATH = "SAVED_PICTURE_PREV_PATH";
 //
 //    private String picturePrevPath;
 
     private File pictureDirectory;
+    private File videoDirectory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,9 +60,21 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ivLastPic = (ImageView) findViewById(R.id.ivLastPicture);
+        vvLastVid = (VideoView) findViewById(R.id.vvLastVideo);
+        llInfo = (LinearLayout) findViewById(R.id.llInfo);
         tvOrientation = (TextView) findViewById(R.id.tvOrientationValue);
         tvLat = (TextView) findViewById(R.id.tvLatValue);
         tvLong = (TextView) findViewById(R.id.tvLongValue);
+        btnPic = (Button) findViewById(R.id.btnTakePic);
+        btnVideo = (Button) findViewById(R.id.btnRecordVideo);
+
+//        if(pictureMode && !videoMode)
+//        {
+//            vvLastVid.setVisibility(View.INVISIBLE);
+//            btnVideo.setVisibility(View.INVISIBLE);
+//        }
+        checkAndChangeMode();
+
 
         if(isExternalStorageReadable() && isExternalStorageWritable())
             Toast.makeText(this, "Can do stuff", Toast.LENGTH_LONG).show();
@@ -57,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Can't do stuff", Toast.LENGTH_LONG).show();
 
         pictureDirectory = getMyPicDirectory();
+        videoDirectory = getMyVideoDirectory();
     }
 
     @Override
@@ -110,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
 
-                setPictureToSize(filename, ivLastPic);
+                setVideoToSize(filename, vvLastVid);
             }
             if(resultCode == RESULT_CANCELED)
             {
@@ -124,7 +150,15 @@ public class MainActivity extends AppCompatActivity {
 
     private String loadLastAttemptedImageCaptureFilename() {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
-        String saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT PATH");
+        String saved_path;
+
+        pictureMode = prefs.getBoolean(SAVED_MODE, true);
+
+        if(pictureMode)
+            saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT PATH");
+        else
+            saved_path = prefs.getString(SAVED_VIDEO_PATH, "DEFAULT PATH");
+
         Log.d("FILE_PATH", "Loaded value: " + saved_path);
 //        picturePrevPath = saved_path;
 //        Log.d("FILE_PATH", "Loaded Prev value: " + picturePrevPath);
@@ -134,20 +168,26 @@ public class MainActivity extends AppCompatActivity {
     private void saveLastAttemptedImageCaptureFilename(String filename) {
         SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(SAVED_PICTURE_PATH, filename);
+        if(pictureMode)
+            editor.putString(SAVED_PICTURE_PATH, filename);
+        else
+            editor.putString(SAVED_VIDEO_PATH, filename);
 //        editor.putString(SAVED_PICTURE_PREV_PATH, filename);
+        editor.putBoolean(SAVED_MODE, pictureMode);
         Log.d("FILE_PATH", "Saved value: " + filename);
 //        Log.d("FILE_PATH", "Saved prev value: " + filename);
         editor.apply();
     }
 
+
     @Override
     protected void onResume()
     {
         super.onResume();
-        String filename = loadLastAttemptedImageCaptureFilename();
-
-        setPictureToSize(filename, ivLastPic);
+        String pictureFilename = loadLastAttemptedImageCaptureFilename();
+        String videoFilename = loadLastAttemptedImageCaptureFilename();
+        setPictureToSize(pictureFilename, ivLastPic);
+        setVideoToSize(videoFilename, vvLastVid);
     }
 
     public boolean isExternalStorageWritable()
@@ -183,8 +223,6 @@ public class MainActivity extends AppCompatActivity {
         bmOptions.inSampleSize = scaleFactor;
         Bitmap bitmap = BitmapFactory.decodeFile(filename, bmOptions);
 
-
-
         String orientation;
         String latValue;
         String latRef;
@@ -208,22 +246,6 @@ public class MainActivity extends AppCompatActivity {
             tvLat.setText(latValue + " " + latRef);
             tvLong.setText(longValue + " " + longRef);
 
-//            if(orientation.equals("8"))
-//            {
-//                iv.setRotation(270);
-//            }
-//            else if(orientation.equals("6"))
-//            {
-//                iv.setRotation(90);
-//            }
-//            else if(orientation.equals("3"))
-//            {
-//                iv.setRotation(180);
-//            }
-//            else if(orientation.equals("1"))
-//            {
-//            }
-
             switch (orientation)
             {
                 case "1":
@@ -245,6 +267,50 @@ public class MainActivity extends AppCompatActivity {
         iv.setImageBitmap(bitmap);
     }
 
+    private void setVideoToSize(String filename, VideoView iv)
+    {
+        String orientation;
+        String latValue;
+        String latRef;
+        String longValue;
+        String longRef;
+
+        ExifInterface exif = null;
+        try {
+            exif = new ExifInterface(filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if(exif.getAttribute(ExifInterface.TAG_ORIENTATION) != null)
+        {
+            orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+            latValue = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+            latRef = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+            longValue = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+            longRef = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+            tvOrientation.setText(orientation);
+            tvLat.setText(latValue + " " + latRef);
+            tvLong.setText(longValue + " " + longRef);
+
+            switch (orientation)
+            {
+                case "1":
+                    break;
+                case "3":
+                    iv.setRotation(180);
+                    break;
+                case "6":
+                    iv.setRotation(90);
+                    break;
+                case "8":
+                    iv.setRotation(270);
+                    break;
+            }
+        }
+
+        iv.setVideoPath(filename);
+    }
+
     private File getMyPicDirectory()
     {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
@@ -253,13 +319,27 @@ public class MainActivity extends AppCompatActivity {
         // between applications and persist after your app has been uninstalled.
 
         // Create the storage directory if it does not exist
-        if (checkMyPicDirectory(mediaStorageDir))
+        if (checkMyDirectory(mediaStorageDir))
             return mediaStorageDir;
         else
             return null;
     }
 
-    private boolean checkMyPicDirectory(File filename)
+    private File getMyVideoDirectory()
+    {
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MOVIES), "BrickCamera");
+        // This location works best if you want the created images to be shared
+        // between applications and persist after your app has been uninstalled.
+
+        // Create the storage directory if it does not exist
+        if (checkMyDirectory(mediaStorageDir))
+            return mediaStorageDir;
+        else
+            return null;
+    }
+
+    private boolean checkMyDirectory(File filename)
     {
         if (! filename.exists()){
             if (! filename.mkdirs()){
@@ -290,5 +370,66 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onBtnRecordVideoClick(View view) {
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
+        String filename = videoDirectory.getPath() + File.separator+"VIDEO_"+timeStamp+".mp4";
+        File videoFile = new File(filename);
+        Uri videoUri = Uri.fromFile(videoFile);
+
+        saveLastAttemptedImageCaptureFilename(filename);
+
+        recordVideo(videoUri);
+    }
+
+    public void recordVideo(Uri filepath)
+    {
+        Intent videoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        videoIntent.putExtra(MediaStore.EXTRA_OUTPUT, filepath);
+        videoIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
+        if(videoIntent.resolveActivity(getPackageManager()) != null)
+            startActivityForResult(videoIntent, VIDEO_REQUEST_CODE);
+    }
+
+    public void onBtnChangeModeClick(View view) {
+
+        checkAndChangeMode();
+    }
+
+    public void checkAndChangeMode()
+    {
+        if( pictureMode )
+        {
+            pictureMode = false;
+
+            //HIDE VIDEO
+            if (vvLastVid.getVisibility() == View.VISIBLE )
+                vvLastVid.setVisibility(View.INVISIBLE);
+            if (btnVideo.getVisibility() == View.VISIBLE)
+                btnVideo.setVisibility(View.INVISIBLE);
+            //SHOW PICTURE
+            if (ivLastPic.getVisibility() == View.INVISIBLE)
+                ivLastPic.setVisibility(View.VISIBLE);
+            if (llInfo.getVisibility() == View.INVISIBLE)
+                llInfo.setVisibility(View.VISIBLE);
+            if (btnPic.getVisibility() == View.INVISIBLE)
+                btnPic.setVisibility(View.VISIBLE);
+        }
+        else if(!pictureMode)
+        {
+            pictureMode = true;
+
+            //HIDE PICTURE
+            if (ivLastPic.getVisibility() == View.VISIBLE)
+                ivLastPic.setVisibility(View.INVISIBLE);
+            if (llInfo.getVisibility() == View.VISIBLE)
+                llInfo.setVisibility(View.INVISIBLE);
+            if (btnPic.getVisibility() == View.VISIBLE)
+                btnPic.setVisibility(View.INVISIBLE);
+            //SHOW VIDEO
+            if (btnVideo.getVisibility() == View.INVISIBLE )
+                btnVideo.setVisibility(View.VISIBLE);
+            if (vvLastVid.getVisibility() == View.INVISIBLE )
+                vvLastVid.setVisibility(View.VISIBLE);
+        }
     }
 }

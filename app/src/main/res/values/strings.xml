@@ -9,4 +9,5 @@
     <string name="longitude">Longitude: </string>
     <string name="take_picture">Take Picture</string>
     <string name="record_video">Record Video</string>
+    <string name="change_mode">Change Mode</string>
 </resources>
