@@ -10,4 +10,5 @@
     <string name="take_picture">Take Picture</string>
     <string name="record_video">Record Video</string>
     <string name="change_mode">Change Mode</string>
+    <string name="title_activity_snapshot">SnapshotActivity</string>
 </resources>

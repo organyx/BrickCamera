@@ -10,66 +10,95 @@
         android:layout_height="300dp"
         android:layout_alignParentTop="true"
         android:layout_margin="5dp"/>
-    <ImageView
-        android:id="@+id/ivLastPicture"
+   <LinearLayout
+       android:layout_width="wrap_content"
+       android:layout_height="200dp"
+       android:orientation="horizontal"
+       android:layout_alignParentTop="true">
+       <ImageView
+           android:id="@+id/ivLastPicture"
+           android:layout_width="180dp"
+           android:layout_height="match_parent"
+           android:background="@drawable/borders"
+           android:layout_margin="5dp"/>
+       <LinearLayout
+           android:id="@+id/llInfo"
+           android:layout_width="match_parent"
+           android:layout_height="match_parent"
+           android:background="@drawable/thin_border"
+           android:layout_margin="5dp">
+           <LinearLayout
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:orientation="vertical"
+               android:layout_margin="10dp">
+               <TextView
+                   style="@style/Text_Style"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="@string/orientation"/>
+               <TextView
+                   style="@style/Text_Style"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="@string/latitude"/>
+               <TextView
+                   style="@style/Text_Style"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="@string/longitude"/>
+           </LinearLayout>
+           <LinearLayout
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:orientation="vertical"
+               android:layout_margin="10dp">
+               <TextView
+                   style="@style/Text_Style"
+                   android:id="@+id/tvOrientationValue"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content" />
+               <TextView
+                   style="@style/Text_Style"
+                   android:id="@+id/tvLatValue"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content" />
+               <TextView
+                   style="@style/Text_Style"
+                   android:id="@+id/tvLongValue"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content" />
+           </LinearLayout>
+       </LinearLayout>
+   </LinearLayout>
+
+    <fragment
+        android:id="@+id/googleMap"
+        android:name="com.google.android.gms.maps.MapFragment"
         android:layout_width="match_parent"
-        android:layout_height="350dp"
-        android:layout_alignParentTop="true"
-        android:background="@drawable/borders"
-        android:layout_margin="5dp"/>
+        android:layout_height="250dp"
+        android:layout_above="@+id/bottom"/>
     <LinearLayout
-        android:id="@+id/llInfo"
-        android:layout_below="@+id/ivLastPicture"
-        android:layout_width="match_parent"
+        android:id="@+id/pop_up_layout"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_above="@+id/bottom"
+        android:paddingBottom="30dp"
         android:background="@drawable/thin_border"
-        android:layout_centerHorizontal="true"
-        android:layout_margin="5dp"
-        android:layout_centerInParent="true">
-        <LinearLayout
+        android:layout_centerHorizontal="true">
+        <TextView
+            android:id="@+id/pop_up_title"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_margin="10dp">
-            <TextView
-                style="@style/Text_Style"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/orientation"/>
-            <TextView
-                style="@style/Text_Style"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/latitude"/>
-            <TextView
-                style="@style/Text_Style"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/longitude"/>
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_margin="10dp">
-            <TextView
-                style="@style/Text_Style"
-                android:id="@+id/tvOrientationValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <TextView
-                style="@style/Text_Style"
-                android:id="@+id/tvLatValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <TextView
-                style="@style/Text_Style"
-                android:id="@+id/tvLongValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
+            android:layout_height="wrap_content" />
+        <ImageView
+            android:id="@+id/pop_up_image"
+            android:layout_width="150dp"
+            android:layout_height="200dp" />
     </LinearLayout>
+
     <LinearLayout
+        android:id="@+id/bottom"
         android:layout_alignParentBottom="true"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

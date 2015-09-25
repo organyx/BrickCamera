@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.DrawableContainer;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
@@ -22,13 +24,24 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback, View.OnClickListener {
 
     private ImageView ivLastPic;
     private VideoView vvLastVid;
@@ -38,6 +51,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvLat;
     private Button btnPic;
     private Button btnVideo;
+    private LinearLayout pop_up;
+
+    private GoogleMap gmap;
+    private Button btnDoc;
 
     private static final int PICTURE_REQUEST_CODE = 123;
     private static final int VIDEO_REQUEST_CODE = 321;
@@ -68,7 +85,12 @@ public class MainActivity extends AppCompatActivity {
         tvLong = (TextView) findViewById(R.id.tvLongValue);
         btnPic = (Button) findViewById(R.id.btnTakePic);
         btnVideo = (Button) findViewById(R.id.btnRecordVideo);
+        pop_up = (LinearLayout) findViewById(R.id.pop_up_layout);
+        pop_up.setVisibility(View.INVISIBLE);
 
+        MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.googleMap);
+
+        mapFragment.getMapAsync(this);
 //        checkAndChangeMode();
         turnOnPicMode();
 
@@ -157,10 +179,15 @@ public class MainActivity extends AppCompatActivity {
         Log.d("MODE", "Load. Current mode: " + pictureMode);
 //        pictureMode = prefs.getBoolean(SAVED_MODE, true);
         Log.d("MODE2", "Loaded. Current mode: " + pictureMode);
+        File picStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "BrickCamera");
+        File movStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MOVIES), "BrickCamera");
+//        Uri path = Uri.parse("android.resource://com.example.aleks.brickcamera/" + R.drawable.default_pic);
         if(pictureMode)
-            saved_path = prefs.getString(SAVED_PICTURE_PATH, "DEFAULT");
+            saved_path = prefs.getString(SAVED_PICTURE_PATH, picStorageDir + File.separator + "IMG_20150923_185826.jpg");
         else
-            saved_path = prefs.getString(SAVED_VIDEO_PATH, "DEFAULT");
+            saved_path = prefs.getString(SAVED_VIDEO_PATH, "Default");
 
         Log.d("FILE_PATH", "Loaded value: " + saved_path);
 //        picturePrevPath = saved_path;
@@ -207,6 +234,16 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.d("MODE", "onResume. Current mode: " + pictureMode);
 //        initializeDirectory(pictureMode);
+
+        int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+        if(status == ConnectionResult.SUCCESS)
+        {
+            Toast.makeText(this, "Google Play is available", Toast.LENGTH_LONG).show();
+        }
+        else
+        {
+            Toast.makeText(this, "Google Play is not available", Toast.LENGTH_LONG).show();
+        }
 //        loadMode();
         String filename = loadLastAttemptedImageCaptureFilename();
         //String videoFilename = loadLastAttemptedImageCaptureFilename();
@@ -241,43 +278,22 @@ public class MainActivity extends AppCompatActivity {
     {
         Log.d("MODE", "setSize. Current mode: " + pictureMode);
         Log.d("setPictureToSize", "File: " + filename);
-        String orientation;
-        String latValue;
-        String latRef;
-        String longValue;
-        String longRef;
 
-        ExifInterface exif = null;
-        try {
-            exif = new ExifInterface(filename);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if(exif.getAttribute(ExifInterface.TAG_ORIENTATION) != null)
+        String orientation = getExifInfo(filename);
+
+        switch (orientation)
         {
-            orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
-            latValue = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
-            latRef = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
-            longValue = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
-            longRef = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
-            tvOrientation.setText(orientation);
-            tvLat.setText(latValue + " " + latRef);
-            tvLong.setText(longValue + " " + longRef);
-
-            switch (orientation)
-            {
-                case "1":
-                    break;
-                case "3":
-                    iv.setRotation(180);
-                    break;
-                case "6":
-                    iv.setRotation(90);
-                    break;
-                case "8":
-                    iv.setRotation(270);
-                    break;
-            }
+            case "1":
+                break;
+            case "3":
+                iv.setRotation(180);
+                break;
+            case "6":
+                iv.setRotation(90);
+                break;
+            case "8":
+                iv.setRotation(270);
+                break;
         }
 
         if(pictureMode)
@@ -311,6 +327,33 @@ public class MainActivity extends AppCompatActivity {
 
             vv.setVideoPath(filename);
         }
+    }
+
+    private String getExifInfo(String filename) {
+        String orientation = null;
+        String latValue;
+        String latRef;
+        String longValue;
+        String longRef;
+
+        ExifInterface exif = null;
+        try {
+            exif = new ExifInterface(filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if(exif.getAttribute(ExifInterface.TAG_ORIENTATION) != null)
+        {
+            orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+            latValue = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE);
+            latRef = exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF);
+            longValue = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE);
+            longRef = exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF);
+            tvOrientation.setText(orientation);
+            tvLat.setText(latValue + " " + latRef);
+            tvLong.setText(longValue + " " + longRef);
+        }
+        return orientation;
     }
 
     private File getMyPicDirectory()
@@ -451,5 +494,99 @@ public class MainActivity extends AppCompatActivity {
 //            vvLastVid.start();
 //        }
         vvLastVid.start();
+    }
+
+    @Override
+    public void onClick(View v) {
+
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        googleMap.setOnMarkerClickListener(this);
+
+        findImagesWithGeoTagAndAddToGmap(googleMap);
+    }
+
+    private void findImagesWithGeoTagAndAddToGmap(GoogleMap googleMap) {
+        String storageState = Environment.getExternalStorageState();
+        if(storageState.equals(Environment.MEDIA_MOUNTED))
+        {
+            File pictureDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+            pictureDir = new File(pictureDir, "BrickCamera");
+
+            if(pictureDir.exists())
+            {
+                File[] files = pictureDir.listFiles();
+                for(File file : files)
+                {
+                    if(file.getName().endsWith(".jpg"))
+                    {
+                        LatLng pos = getLatLongFromExif(file.getAbsolutePath());
+
+                        if(pos != null)
+                        {
+                            addGeoTag(pos, file.getName(), googleMap);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void addGeoTag(LatLng pos, String name, GoogleMap gmap) {
+        gmap.setMyLocationEnabled(true);
+        gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 13));
+        gmap.addMarker(new MarkerOptions().position(pos)).setTitle(name);
+    }
+
+    private LatLng getLatLongFromExif(String absolutePath) {
+        float latLong[] = new float[2];
+        LatLng pos = null;
+        try{
+            ExifInterface exif = new ExifInterface(absolutePath);
+            if(exif.getLatLong(latLong))
+            {
+                pos = new LatLng(latLong[0], latLong[1]);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return pos;
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+//        Toast.makeText(this, "Image name: " + marker.getTitle(), Toast.LENGTH_LONG).show();
+
+        File pictureDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        pictureDir = new File(pictureDir, "BrickCamera" + File.separator + marker.getTitle());
+//        marker.setIcon(BitmapDescriptorFactory.fromFile(pictureDir.getPath()));
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeFile(pictureDir.getAbsolutePath(),bmOptions);
+//        Drawable pic = new Drawable.createFromPath();
+
+        if(pop_up.getVisibility() == View.INVISIBLE)
+        {
+            TextView title = (TextView) pop_up.getChildAt(0);
+            ImageView image = (ImageView) pop_up.getChildAt(1);
+
+            title.setText(marker.getTitle());
+            image.setImageBitmap(bitmap);
+
+            pop_up.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            pop_up.setVisibility(View.INVISIBLE);
+        }
+//        image.setImageURI(marker.);
+        return true;
     }
 }
