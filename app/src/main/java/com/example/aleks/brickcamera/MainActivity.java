@@ -52,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     private Button btnPic;
     private Button btnVideo;
     private LinearLayout pop_up;
+    private ImageView pop_up_image;
 
     private GoogleMap gmap;
     private Button btnDoc;
@@ -86,7 +87,11 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         btnPic = (Button) findViewById(R.id.btnTakePic);
         btnVideo = (Button) findViewById(R.id.btnRecordVideo);
         pop_up = (LinearLayout) findViewById(R.id.pop_up_layout);
-        pop_up.setVisibility(View.INVISIBLE);
+        pop_up_image = (ImageView) findViewById(R.id.pop_up_image);
+        if(pop_up.getVisibility() == View.VISIBLE)
+        {
+            pop_up.setVisibility(View.INVISIBLE);
+        }
 
         MapFragment mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.googleMap);
 
@@ -235,6 +240,11 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         Log.d("MODE", "onResume. Current mode: " + pictureMode);
 //        initializeDirectory(pictureMode);
 
+        if(pop_up.getVisibility() == View.VISIBLE)
+        {
+            pop_up.setVisibility(View.INVISIBLE);
+        }
+
         int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
         if(status == ConnectionResult.SUCCESS)
         {
@@ -255,6 +265,7 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     protected void onPause()
     {
         super.onPause();
+        pop_up.setVisibility(View.VISIBLE);
 //        saveMode();
     }
 
@@ -299,7 +310,7 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         if(pictureMode)
         {
             int targetW = 200;
-            int targetH = 200;
+            int targetH = 150;
 
             BitmapFactory.Options bmOptions = new BitmapFactory.Options();
             bmOptions.inJustDecodeBounds = true;
@@ -568,8 +579,10 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         File pictureDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         pictureDir = new File(pictureDir, "BrickCamera" + File.separator + marker.getTitle());
 //        marker.setIcon(BitmapDescriptorFactory.fromFile(pictureDir.getPath()));
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        Bitmap bitmap = BitmapFactory.decodeFile(pictureDir.getAbsolutePath(),bmOptions);
+
+//        setPictureToPopUpSize(pictureDir.getPath(), pop_up_image);
+//        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+//        Bitmap bitmap = BitmapFactory.decodeFile(pictureDir.getAbsolutePath(),bmOptions);
 //        Drawable pic = new Drawable.createFromPath();
 
         if(pop_up.getVisibility() == View.INVISIBLE)
@@ -578,7 +591,7 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
             ImageView image = (ImageView) pop_up.getChildAt(1);
 
             title.setText(marker.getTitle());
-            image.setImageBitmap(bitmap);
+            setPictureToPopUpSize(pictureDir.getPath(), image);
 
             pop_up.setVisibility(View.VISIBLE);
         }
@@ -588,5 +601,51 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         }
 //        image.setImageURI(marker.);
         return true;
+    }
+
+    private void setPictureToPopUpSize(String filename, ImageView iv) {
+        String orientation = getExifInfo(filename);
+
+        switch (orientation)
+        {
+            case "1":
+                break;
+            case "3":
+                iv.setRotation(180);
+                break;
+            case "6":
+                iv.setRotation(90);
+                break;
+            case "8":
+                iv.setRotation(270);
+                break;
+        }
+
+        if(pictureMode)
+        {
+            int targetW = 150;
+            int targetH = 150;
+
+            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+            bmOptions.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(filename, bmOptions);
+            int photoW = bmOptions.outWidth;
+            int photoH = bmOptions.outHeight;
+
+            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+            bmOptions.inJustDecodeBounds = false;
+            bmOptions.inSampleSize = scaleFactor;
+            Bitmap bitmap = BitmapFactory.decodeFile(filename, bmOptions);
+
+            iv.setImageBitmap(bitmap);
+        }
+    }
+
+    public void onPopUpClick(View view) {
+        if(pop_up.getVisibility() == View.VISIBLE)
+        {
+            pop_up.setVisibility(View.INVISIBLE);
+        }
     }
 }

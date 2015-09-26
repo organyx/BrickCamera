@@ -10,64 +10,110 @@
         android:layout_alignParentTop="true"
         android:layout_margin="5dp"
         android:onClick="onVideoClick"/>
-    <ImageView
-        android:id="@+id/ivLastPicture"
+
+    <RelativeLayout
         android:layout_width="300dp"
-        android:layout_height="fill_parent"
+        android:layout_height="200dp"
         android:layout_alignParentTop="true"
-        android:background="@drawable/borders"
-        android:layout_margin="5dp"
-        />
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+        <ImageView
+            android:id="@+id/ivLastPicture"
+            android:layout_width="wrap_content"
+            android:maxWidth="280dp"
+            android:layout_height="wrap_content"
+            android:maxHeight="100dp"
+            android:background="@drawable/borders"
+            android:layout_margin="5dp"
+            android:layout_centerInParent="true"
+            />
+    </RelativeLayout>
+        <LinearLayout
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:id="@+id/llInfo"
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/thin_border"
+            android:layout_margin="5dp"
+            >
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="5dp">
+                <TextView
+                    style="@style/Text_Style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/orientation"/>
+                <TextView
+                    style="@style/Text_Style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/latitude"/>
+                <TextView
+                    style="@style/Text_Style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/longitude"/>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="5dp">
+                <TextView
+                    style="@style/Text_Style"
+                    android:id="@+id/tvOrientationValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <TextView
+                    style="@style/Text_Style"
+                    android:id="@+id/tvLatValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <TextView
+                    style="@style/Text_Style"
+                    android:id="@+id/tvLongValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
+    <fragment
+        android:id="@+id/googleMap"
+        android:name="com.google.android.gms.maps.MapFragment"
+        android:layout_width="280dp"
+        android:layout_height="220dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="5dp"/>
     <LinearLayout
-        android:id="@+id/llInfo"
+        android:id="@+id/pop_up_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="30dp"
         android:background="@drawable/thin_border"
-        android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:layout_margin="5dp">
-        <LinearLayout
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="50dp"
+        android:onClick="onPopUpClick"
+        >
+        <TextView
+            android:id="@+id/pop_up_title"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_margin="10dp">
-            <TextView
-                style="@style/Text_Style"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/orientation"/>
-            <TextView
-                style="@style/Text_Style"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/latitude"/>
-            <TextView
-                style="@style/Text_Style"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/longitude"/>
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_margin="10dp">
-            <TextView
-                style="@style/Text_Style"
-                android:id="@+id/tvOrientationValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <TextView
-                style="@style/Text_Style"
-                android:id="@+id/tvLatValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <TextView
-                style="@style/Text_Style"
-                android:id="@+id/tvLongValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
+            android:layout_height="wrap_content" />
+        <ImageView
+            android:id="@+id/pop_up_image"
+            android:layout_width="150dp"
+            android:layout_height="150dp" />
     </LinearLayout>
     <LinearLayout
         android:layout_alignParentBottom="true"
