@@ -73,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     private File pictureDirectory;
     private File videoDirectory;
 
+    private String pictureDirectoryStr;
+    private String videoDirectoryStr;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,9 +113,17 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     private void initializeDirectory() {
         Log.d("MODE", "initD Current mode: " + pictureMode);
         if(pictureMode)
+        {
             pictureDirectory = getMyPicDirectory();
+            if(pictureDirectory != null)
+                pictureDirectoryStr = pictureDirectory.getPath();
+        }
         else
+        {
             videoDirectory = getMyPicDirectory();
+            if(videoDirectory != null)
+                videoDirectoryStr = videoDirectory.getPath();
+        }
     }
 
     @Override
