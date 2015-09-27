@@ -4,8 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.DrawableContainer;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
@@ -30,7 +28,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -59,7 +56,9 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
 
     private static final int PICTURE_REQUEST_CODE = 123;
     private static final int VIDEO_REQUEST_CODE = 321;
-    public static final String SAVED_PREFERENCES = "SAVED_PREFERENCES";
+    public static final String SAVED_PICTURE_PREFERENCES = "SAVED_PICTURE_PREFERENCES";
+    public static final String SAVED_VIDEO_PREFERENCES = "SAVED_VIDEO_PREFERENCES";
+    public static final String SAVED_MODE_PREFERENCES = "SAVED_MODE_PREFERENCES";
     public static final String SAVED_PICTURE_PATH = "SAVED_PICTURE_PATH";
     public static final String SAVED_VIDEO_PATH = "SAVED_PICTURE_PATH";
     public static final String SAVED_MODE = "SAVED_MODE";
@@ -112,18 +111,14 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
 
     private void initializeDirectory() {
         Log.d("MODE", "initD Current mode: " + pictureMode);
-        if(pictureMode)
-        {
-            pictureDirectory = getMyPicDirectory();
-            if(pictureDirectory != null)
-                pictureDirectoryStr = pictureDirectory.getPath();
-        }
-        else
-        {
-            videoDirectory = getMyPicDirectory();
-            if(videoDirectory != null)
-                videoDirectoryStr = videoDirectory.getPath();
-        }
+        pictureDirectory = getMyPicDirectory();
+        if(pictureDirectory != null)
+            pictureDirectoryStr = pictureDirectory.getPath();
+
+        videoDirectory = getMyVidDirectory();
+        if(videoDirectory != null)
+            videoDirectoryStr = videoDirectory.getPath();
+
     }
 
     @Override
@@ -161,7 +156,8 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
                 Log.d("onActivityResult", "RESULT_OK");
                 String filename = loadLastAttemptedImageCaptureFilename();
 //                saveMode();
-                setPictureToSize(filename, ivLastPic, vvLastVid);
+//                pictureMode = loadMode();
+                setPictureToSize(filename, ivLastPic);
             }
             if(resultCode == RESULT_CANCELED)
             {
@@ -177,9 +173,9 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
             if(resultCode == RESULT_OK)
             {
                 Log.d("onActivityResult", "RESULT_OK");
-                String filename = loadLastAttemptedImageCaptureFilename();
-//                saveMode();
-                setPictureToSize(filename, ivLastPic, vvLastVid);
+                String filename = loadLastAttemptedVideoCaptureFilename();
+//                pictureMode = loadMode();
+                setVideo(filename, vvLastVid);
             }
             if(resultCode == RESULT_CANCELED)
             {
@@ -190,58 +186,60 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     }
 
     private String loadLastAttemptedImageCaptureFilename() {
-        SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
-        String saved_path;
+        SharedPreferences prefs = getSharedPreferences(SAVED_PICTURE_PREFERENCES, MODE_PRIVATE);
+        String saved_pic_path;
         Log.d("MODE", "Load. Current mode: " + pictureMode);
-//        pictureMode = prefs.getBoolean(SAVED_MODE, true);
-        Log.d("MODE2", "Loaded. Current mode: " + pictureMode);
         File picStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "BrickCamera");
+        saved_pic_path = prefs.getString(SAVED_PICTURE_PATH, picStorageDir + File.separator + "IMG_20150923_185826.jpg");
+        return saved_pic_path;
+    }
+
+    private String loadLastAttemptedVideoCaptureFilename() {
+        SharedPreferences prefs = getSharedPreferences(SAVED_VIDEO_PREFERENCES, MODE_PRIVATE);
+        String saved_vid_path;
         File movStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_MOVIES), "BrickCamera");
-//        Uri path = Uri.parse("android.resource://com.example.aleks.brickcamera/" + R.drawable.default_pic);
-        if(pictureMode)
-            saved_path = prefs.getString(SAVED_PICTURE_PATH, picStorageDir + File.separator + "IMG_20150923_185826.jpg");
-        else
-            saved_path = prefs.getString(SAVED_VIDEO_PATH, "Default");
-
-        Log.d("FILE_PATH", "Loaded value: " + saved_path);
-//        picturePrevPath = saved_path;
-//        Log.d("FILE_PATH", "Loaded Prev value: " + picturePrevPath);
-        return saved_path;
+        saved_vid_path = prefs.getString(SAVED_VIDEO_PATH, movStorageDir + File.separator + "VID_20150923_185106.mp4");
+        return saved_vid_path;
     }
 
     private void saveLastAttemptedImageCaptureFilename(String filename) {
-        SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(SAVED_PICTURE_PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         Log.d("MODE", "Save. Current mode: " + pictureMode);
-        if(pictureMode)
-            editor.putString(SAVED_PICTURE_PATH, filename);
-        else
-            editor.putString(SAVED_VIDEO_PATH, filename);
-//        editor.putString(SAVED_PICTURE_PREV_PATH, filename);
-//        editor.putBoolean(SAVED_MODE, pictureMode);
+        pictureDirectoryStr = filename;
+        editor.putString(SAVED_PICTURE_PATH, pictureDirectoryStr);
         Log.d("MODE2", "Saved. Current mode: " + pictureMode);
         Log.d("FILE_PATH", "Saved value: " + filename);
-//        Log.d("FILE_PATH", "Saved prev value: " + filename);
         editor.apply();
     }
 
-//    private void loadMode()
-//    {
-//        SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
-//        pictureMode = prefs.getBoolean(SAVED_MODE, true);
-//        Log.d("MODE3", "loadMode. Current mode: " + pictureMode);
-//    }
-//
-//    private void saveMode()
-//    {
-//        SharedPreferences prefs = getSharedPreferences(SAVED_PREFERENCES, MODE_PRIVATE);
-//        SharedPreferences.Editor editor = prefs.edit();
-//        Log.d("MODE3", "saveMode. Current mode: " + pictureMode);
-//        editor.putBoolean(SAVED_MODE, pictureMode);
-//        editor.apply();
-//    }
+    private void saveLastAttemptedVideoCaptureFilename(String filename) {
+        SharedPreferences prefs = getSharedPreferences(SAVED_VIDEO_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        Log.d("MODE", "Save. Current mode: " + pictureMode);
+        videoDirectoryStr = filename;
+        editor.putString(SAVED_VIDEO_PATH, videoDirectoryStr);
+        editor.apply();
+    }
+
+    private boolean loadMode()
+    {
+        SharedPreferences prefs = getSharedPreferences(SAVED_MODE_PREFERENCES, MODE_PRIVATE);
+        boolean mode = prefs.getBoolean(SAVED_MODE, true);
+        Log.d("MODE3", "loadMode. Current mode: " + pictureMode);
+        return mode;
+    }
+
+    private void saveMode()
+    {
+        SharedPreferences prefs = getSharedPreferences(SAVED_MODE_PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        Log.d("MODE3", "saveMode. Current mode: " + pictureMode);
+        editor.putBoolean(SAVED_MODE, pictureMode);
+        editor.apply();
+    }
 
 
     @Override
@@ -265,10 +263,15 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         {
             Toast.makeText(this, "Google Play is not available", Toast.LENGTH_LONG).show();
         }
-//        loadMode();
-        String filename = loadLastAttemptedImageCaptureFilename();
+//        pictureMode = loadMode();
+
+        String pic_filename = loadLastAttemptedImageCaptureFilename();
+        String vid_filename = loadLastAttemptedVideoCaptureFilename();
+
+//        String filename = loadLastAttemptedImageCaptureFilename();
         //String videoFilename = loadLastAttemptedImageCaptureFilename();
-        setPictureToSize(filename, ivLastPic, vvLastVid);
+        setPictureToSize(pic_filename, ivLastPic);
+        setVideo(vid_filename, vvLastVid);
 //        setVideoToSize(videoFilename, vvLastVid);
     }
 
@@ -290,20 +293,16 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     public boolean isExternalStorageWritable()
     {
         String state = Environment.getExternalStorageState();
-        if(Environment.MEDIA_MOUNTED.equals(state))
-            return true;
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state);
     }
 
     public boolean isExternalStorageReadable()
     {
         String state = Environment.getExternalStorageState();
-        if(Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state))
-            return true;
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state) || Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
     }
 
-    private void setPictureToSize(String filename, ImageView iv, VideoView vv)
+    private void setPictureToSize(String filename, ImageView iv)
     {
         Log.d("MODE", "setSize. Current mode: " + pictureMode);
         Log.d("setPictureToSize", "File: " + filename);
@@ -318,18 +317,19 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
 
             iv.setImageBitmap(bitmap);
         }
-        else
-        {
-            MediaController mc = new MediaController(this);
-            mc.setAnchorView(vv);
-            mc.setMediaPlayer(vv);
+    }
 
-            vv.setMediaController(mc);
+    private void setVideo(String filename, VideoView vv)
+    {
+        MediaController mc = new MediaController(this);
+        mc.setAnchorView(vv);
+        mc.setMediaPlayer(vv);
+
+        vv.setMediaController(mc);
 //            vv.setClickable(true);
 //            vv.setEnabled(true);
 
-            vv.setVideoPath(filename);
-        }
+        vv.setVideoPath(filename);
     }
 
     private String getExifInfo(String filename) {
@@ -363,12 +363,23 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     {
         Log.d("MODE", "getD. Current mode: " + pictureMode);
         File mediaStorageDir;
-        if(pictureMode)
-            mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+
+        mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES), "BrickCamera");
+
+        if (checkMyDirectory(mediaStorageDir))
+            return mediaStorageDir;
         else
-            mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_MOVIES), "BrickCamera");
+            return null;
+    }
+
+    private File getMyVidDirectory()
+    {
+        Log.d("MODE", "getD. Current mode: " + pictureMode);
+        File mediaStorageDir;
+
+        mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MOVIES), "BrickCamera");
 
         if (checkMyDirectory(mediaStorageDir))
             return mediaStorageDir;
@@ -394,10 +405,14 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         initializeDirectory();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String filename = pictureDirectory.getPath() + File.separator+"IMG_"+timeStamp+".jpg";
+
+        pictureDirectoryStr = filename;
+
         File imageFile = new File(filename);
         Uri imageUri = Uri.fromFile(imageFile);
 
         saveLastAttemptedImageCaptureFilename(filename);
+//        saveMode();
 
         takePicture(imageUri);
     }
@@ -415,11 +430,15 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
         initializeDirectory();
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String filename = videoDirectory.getPath() + File.separator+"VID_"+timeStamp+".mp4";
+
+        videoDirectoryStr = filename;
+
         File videoFile = new File(filename);
         Uri videoUri = Uri.fromFile(videoFile);
 
-        saveLastAttemptedImageCaptureFilename(filename);
-
+//        saveLastAttemptedImageCaptureFilename(videoDirectoryStr);
+        saveLastAttemptedVideoCaptureFilename(filename);
+//saveMode();
         recordVideo(videoUri);
     }
 
